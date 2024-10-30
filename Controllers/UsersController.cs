@@ -48,10 +48,13 @@ namespace UserRegistration_Backend.Controllers
             {
                 return BadRequest();
             }
-
-            if (UserExists(user.Email))
+            if (UserNameExists(user.UserName))
             {
-                return Conflict();
+                return Conflict(new { message = "Username already exists", userNameExist = true });
+            }
+            if (UserEmailExists(user.Email))
+            {
+                return Conflict(new { message = "Email already exists", emailExist = true });
             }
             try
             {
@@ -90,7 +93,7 @@ namespace UserRegistration_Backend.Controllers
             return NoContent();
         }
 
-        private bool UserExists(string email)
+        private bool UserEmailExists(string email)
         {
             try
             {
@@ -98,7 +101,19 @@ namespace UserRegistration_Backend.Controllers
             }
             catch (Exception ex)
             {
-                throw new Exception("Error checking if user exists", ex);
+                throw new Exception("Error checking if user email exists", ex);
+            }
+        }
+
+        private bool UserNameExists(string username)
+        {
+            try
+            {
+                return _context.User.Any(e => e.UserName == username);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error checking if username exists", ex);
             }
         }
     }
