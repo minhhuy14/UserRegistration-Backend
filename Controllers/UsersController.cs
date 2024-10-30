@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 using UserRegistration_Backend.Data;
 using UserRegistration_Backend.Models;
 using UserRegistration_Backend.Services;
@@ -48,12 +49,29 @@ namespace UserRegistration_Backend.Controllers
                 return BadRequest();
             }
 
-            string hashedPassword = new PasswordService().HashedPassword(user.Password);
-            user.Password = hashedPassword;
-            _context.Add(user);
-            await _context.SaveChangesAsync();
+            if (UserExists(user.Email))
+            {
+                return Conflict();
+            }
+            try
+            {
+                string hashedPassword = new PasswordService().HashedPassword(user.Password);
+                user.Password = hashedPassword;
 
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+                _context.Add(user);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, dbEx.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError, ex.Message);
+            }
+
         }
 
         // DELETE: api/Users/5
@@ -72,9 +90,16 @@ namespace UserRegistration_Backend.Controllers
             return NoContent();
         }
 
-        private bool UserExists(int id)
+        private bool UserExists(string email)
         {
-            return _context.User.Any(e => e.Id == id);
+            try
+            {
+                return _context.User.Any(e => e.Email == email);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error checking if user exists", ex);
+            }
         }
     }
 }
