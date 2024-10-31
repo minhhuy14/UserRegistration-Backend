@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "mssql1": {
+      "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('resourceGroupName')]/providers/Microsoft.Web/sites/AdvancedWebProgrammingServices/providers/Microsoft.ServiceLinker/linkers/ConnectionStringsUserRegistration_Backen_4322B51470",
+      "secretStore": "AzureAppSettings",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourcegroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/usermanagementdbserver/databases/UserRegistration_Backend_DB",
+      "type": "mssql.azure",
+      "connectionId": "ConnectionStrings:UserRegistration_BackendContext",
+      "dynamicId": null
+    },
+    "apis2": {
+      "apiEndpoint": "https://usermanagementapi.azure-api.net/",
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ApiManagement/service/UserManagementAPI/apis/UserRegistrationBackend",
+      "type": "apis.azure"
+    }
+  }
+}

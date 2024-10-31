@@ -1,8 +1,15 @@
 {
   "dependencies": {
+    "apis1": {
+      "type": "apis"
+    },
     "mssql1": {
       "type": "mssql",
-      "connectionId": "ConnectionStrings:UserRegistration_BackendContext"
+      "connectionId": "ConnectionStrings:UserRegistration_BackendContext",
+      "dynamicId": null
+    },
+    "apis2": {
+      "type": "apis"
     }
   }
 }
