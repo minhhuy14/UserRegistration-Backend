@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using UserRegistration_Backend.Data;
@@ -7,19 +10,25 @@ using UserRegistration_Backend.Services;
 
 namespace UserRegistration_Backend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("/")]
     [ApiController]
     public class UsersController : ControllerBase
     {
         private readonly UserRegistration_BackendContext _context;
 
-        public UsersController(UserRegistration_BackendContext context)
+        private readonly PasswordService _passwordService;
+        private readonly AuthService _authService;
+        public UsersController(UserRegistration_BackendContext context, AuthService authService, PasswordService passwordService)
         {
             _context = context;
+            _passwordService = passwordService;
+            _authService = authService;
+
         }
 
         // GET: api/Users
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
             return await _context.User.ToListAsync();
@@ -42,7 +51,7 @@ namespace UserRegistration_Backend.Controllers
         // POST: api/Users
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("register")]
-        public async Task<ActionResult<User>> PostUser(User user)
+        public async Task<ActionResult<User>> Register(User user)
         {
             if (user.Email == null || user.Password == null)
             {
@@ -58,13 +67,21 @@ namespace UserRegistration_Backend.Controllers
             }
             try
             {
-                string hashedPassword = new PasswordService().HashedPassword(user.Password);
+                Console.WriteLine("User: " + user.Id);
+                string hashedPassword = _passwordService.HashPassword(user, user.Password);
                 user.Password = hashedPassword;
 
                 _context.Add(user);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("GetUser", new { id = user.Id }, user);
+                return Ok(
+                    new
+                    {
+                        message = "Register successfully",
+                        uid = user.Id,
+                        emai = user.Email
+                    }
+                );
             }
             catch (DbUpdateException dbEx)
             {
@@ -76,6 +93,34 @@ namespace UserRegistration_Backend.Controllers
             }
 
         }
+
+        //POST: /login
+        [HttpPost("login")]
+        public async Task<ActionResult> Login([FromBody] LoginRequest request)
+        {
+            var user = await _context.User.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            var validPassword = _passwordService.VerifyPassword(user, request.Password);
+            if (validPassword == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized(new { message = "Invalid password" });
+            }
+
+            var accessToken = _authService.Authenticate(user);
+            return Ok(new
+            {
+                token = accessToken,
+                message = "Login successfully",
+                email = user.Email,
+                uid = user.Id.ToString()
+            });
+
+
+        }
+
 
         private bool UserEmailExists(string email)
         {
