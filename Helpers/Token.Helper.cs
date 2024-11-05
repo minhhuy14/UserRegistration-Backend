@@ -1,6 +1,7 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 public class TokenHelper
 {
@@ -19,8 +20,9 @@ public class TokenHelper
         var audience = jwtSettings["Audience"];
 
         // Create the JWT and write it to a string
-        var key = new SymmetricSecurityKey("4df48011-3c8c-4732-b21c-a5aedb29cad5"u8.ToArray());
+        var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
 
 
 
@@ -33,10 +35,10 @@ public class TokenHelper
         };
 
         var token = new JwtSecurityToken(
-             issuer: "your_issuer",
-             audience: "your_audience",
+             issuer: issuer,
+             audience: audience,
              claims: claims,
-             expires: DateTime.Now.AddMinutes(30),
+             expires: DateTime.UtcNow.AddHours(1),
              signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -50,7 +52,7 @@ public class TokenHelper
         var audience = jwtSettings["Audience"];
 
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Convert.FromBase64String(secretKey);
+        var key = Encoding.ASCII.GetBytes(secretKey);
 
         var validationParameters = new TokenValidationParameters
         {
@@ -60,7 +62,8 @@ public class TokenHelper
             ValidateIssuerSigningKey = true,
             ValidIssuer = issuer,
             ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(key)
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero
         };
 
         try

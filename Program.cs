@@ -40,7 +40,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(secretKey)
+            IssuerSigningKey = new SymmetricSecurityKey(secretKey),
+            ClockSkew = TimeSpan.Zero
         };
     });
 
@@ -81,7 +82,6 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<TokenHelper>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PasswordService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -97,7 +97,7 @@ if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 
 app.UseHttpsRedirection();
 app.UseCors(MyAllowSpecificOrigins);
-
+//app.UseMiddleware<TokenValidationMiddleware>();
 app.UseAuthentication(); // Ensure authentication middleware is enabled
 app.UseAuthorization();
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
+using System.Security.Claims;
 using UserRegistration_Backend.Data;
 using UserRegistration_Backend.Models;
 using UserRegistration_Backend.Services;
@@ -27,7 +28,7 @@ namespace UserRegistration_Backend.Controllers
         }
 
         // GET: api/Users
-        [HttpGet]
+        [HttpGet("/users")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()
         {
@@ -110,15 +111,42 @@ namespace UserRegistration_Backend.Controllers
             }
 
             var accessToken = _authService.Authenticate(user);
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddHours(1),
+                SameSite = SameSiteMode.Strict,
+                Secure = true
+            };
+            Response.Cookies.Append("access_token", accessToken, cookieOptions);
             return Ok(new
             {
-                token = accessToken,
-                message = "Login successfully",
+                message = "Login successfully!",
                 email = user.Email,
                 uid = user.Id.ToString()
             });
 
 
+        }
+
+        //GET: /profile
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<ActionResult> Profile()
+        {
+            var uid = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.User.FindAsync(Guid.Parse(uid));
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            return Ok(new
+            {
+                message = "Profile",
+                email = user.Email,
+                uid = user.Id.ToString()
+            });
         }
 
 
